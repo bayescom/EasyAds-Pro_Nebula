@@ -8,6 +8,7 @@ from datetime import timedelta, datetime
 import csj_report_api
 import ks_report_api
 import ylh_report_api
+import baidu_report_api
 
 utils_path = os.path.abspath(os.path.dirname(__file__)) + '/../utils'
 sys.path.append(utils_path)
@@ -40,7 +41,7 @@ def get_one_report(sdk_setting):
         # 3 穿山甲
         3: lambda: csj_report_api.csj_report(yesterday, params['user_id'], params['role_id'], params['security_key']),
         # 4 百度
-        4: None,
+        4: lambda: baidu_report_api.baidu_report(yesterday, params['access_key'], params['private_key']),
         # 5 快手
         5: lambda: ks_report_api.ks_report(yesterday, params['access_key'], params['security_key'])
     }
