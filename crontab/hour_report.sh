@@ -45,7 +45,7 @@ main() {
           notify "deal_reduce.py"
         ) &
     else
-       warn "上报日志文件夹不存在或无请求日志文件，已跳过上报日志处理"
+       warn "上报日志文件夹不存在或无上报日志文件，已跳过上报日志处理"
     fi
 
     wait
