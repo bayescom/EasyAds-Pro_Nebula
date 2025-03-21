@@ -25,10 +25,17 @@ all_cols = sdk_adspot_key + pv_value + deal_value
 # 1. 如果是小时报表任务，需要把三个reduce结果文件按照广告源维度left join起来得到结果
 def do_join(pv_file_in, deal_file_in, file_out, report_timestamp):
     # NOTE 注意: 所有的列读进来都是string格式, 后续要做比较判断和计算要注意类型转换
-    pv_df = pd.read_csv(pv_file_in, sep=SEPARATOR, header=None, dtype=str, names=(adspot_key + pv_value))
-    deal_df = pd.read_csv(deal_file_in, sep=SEPARATOR, header=None, dtype=str, names=(sdk_adspot_key + deal_value))
+    # 如果缺少了请求日志的结果文件或者上报日志的结果文件，用空的DataFrame替代，正常插入另一部分文件
+    try:
+        pv_df = pd.read_csv(pv_file_in, sep=SEPARATOR, header=None, dtype=str, names=(adspot_key + pv_value))
+    except:
+        pv_df = pd.DataFrame(columns=adspot_key + pv_value)
+    try:
+        deal_df = pd.read_csv(deal_file_in, sep=SEPARATOR, header=None, dtype=str, names=(sdk_adspot_key + deal_value))
+    except:
+        deal_df = pd.DataFrame(columns=sdk_adspot_key + deal_value)
 
-    join_df = pd.merge(pv_df, deal_df, on=adspot_key, how='left')
+    join_df = pd.merge(pv_df, deal_df, on=adspot_key, how='outer')
 
     # 把时间戳不是当前小时的记录筛掉
     join_df = join_df[join_df['timestamp'] == report_timestamp]
@@ -45,7 +52,7 @@ def do_join(pv_file_in, deal_file_in, file_out, report_timestamp):
     int_columns = ['pvs', 'reqs', 'bids', 'shows', 'clicks']
     join_df[int_columns] = join_df[int_columns].astype(int)
 
-    # 写出到结果文件夹，用来给天报表合并
+    # 写出到结果文件夹，用作备份
     join_df = join_df[all_cols]
     join_df.to_csv(file_out, sep=SEPARATOR, index=False, header=False, encoding='utf-8-sig')
     # 转成元组数组，用来更新数据库

@@ -4,41 +4,49 @@ main() {
     # 准备运行参数
     init "$@"
 
-    # 1. req数据处理
-    (
-      # 1.1 pv做map
-      # [1]pv的map脚本 [2]hdfs服务器地址/字符串"file" [3]聚合SDK日志hdfs路径/本地聚合SDK req日志路径 [4]pv_map输出文件夹路径 [5]日志文件路径
-      python "${script_path}/pv_map.py" "${hdfs_hosts}" "${temp_nebula_pv_log_path}" "${temp_pv_map_path}" "${log_file}"
-      notify "pv_map.py"
+    if [ -d "${temp_nebula_pv_log_path}" ] && [ "$(ls -A "${temp_nebula_pv_log_path}")" ]; then
+        # 1. req数据处理
+        (
+          # 1.1 pv做map
+          # [1]pv的map脚本 [2]hdfs服务器地址/字符串"file" [3]聚合SDK日志hdfs路径/本地聚合SDK req日志路径 [4]pv_map输出文件夹路径 [5]日志文件路径
+          python "${script_path}/pv_map.py" "${hdfs_hosts}" "${temp_nebula_pv_log_path}" "${temp_pv_map_path}" "${log_file}"
+          notify "pv_map.py"
 
-      # 1.2.1 pv做map合并 + sort
-      # [1]pv_map输入文件夹路径 [2]用于sort的临时路径 [3]每个pv_map文件sort后的文件夹路径 [4]pv_sort聚合结果文件
-      do_sort "${temp_pv_map_path}" "${pv_sort_temp_path}" "${temp_pv_sort_path}" "${temp_pv_sort_file}"
-      notify "pv sort"
+          # 1.2.1 pv做map合并 + sort
+          # [1]pv_map输入文件夹路径 [2]用于sort的临时路径 [3]每个pv_map文件sort后的文件夹路径 [4]pv_sort聚合结果文件
+          do_sort "${temp_pv_map_path}" "${pv_sort_temp_path}" "${temp_pv_sort_path}" "${temp_pv_sort_file}"
+          notify "pv sort"
 
-      # 1.2.2 pv做reduce
-      # [1]pv_sort聚合结果文件 [2]pv_reduce脚本 [3]pv_reduce结果文件
-      < "${temp_pv_sort_file}" python "${script_path}/pv_reduce.py" > "${pv_result_file}" # "${log_file}" 逻辑很简单，不需要log
-      notify "pv_reduce.py"
-    ) &
+          # 1.2.2 pv做reduce
+          # [1]pv_sort聚合结果文件 [2]pv_reduce脚本 [3]pv_reduce结果文件
+          < "${temp_pv_sort_file}" python "${script_path}/pv_reduce.py" > "${pv_result_file}" # "${log_file}" 逻辑很简单，不需要log
+          notify "pv_reduce.py"
+        ) &
+    else
+       warn "请求日志文件夹不存在或无请求日志文件，已跳过请求日志处理"
+    fi
 
     # 2. 其他上报处理
-    (
-      # 2.1 deal做map
-      # [1]deal_map脚本 [2]hdfs服务器地址/字符串"file" [3]聚合SDK日志hdfs路径/本地聚合SDK其他上报日志路径 [4]deal_map输出文件夹路径 [5]日志文件路径
-      python "${script_path}/deal_map.py" "${hdfs_hosts}" "${temp_nebula_deal_log_path}" "${temp_deal_map_path}" "${log_file}"
-      notify "deal_map.py"
+    if [ -d "${temp_nebula_deal_log_path}" ] && [ "$(ls -A "${temp_nebula_deal_log_path}")" ]; then
+        (
+          # 2.1 deal做map
+          # [1]deal_map脚本 [2]hdfs服务器地址/字符串"file" [3]聚合SDK日志hdfs路径/本地聚合SDK其他上报日志路径 [4]deal_map输出文件夹路径 [5]日志文件路径
+          python "${script_path}/deal_map.py" "${hdfs_hosts}" "${temp_nebula_deal_log_path}" "${temp_deal_map_path}" "${log_file}"
+          notify "deal_map.py"
 
-      # 2.2.1 deal做map合并 + sort
-      # [1]deal_map输入文件夹路径 [2]用于sort的临时路径 [3]每个deal_map文件sort后的文件夹路径 [4]deal_sort聚合结果文件
-      do_sort "${temp_deal_map_path}" "${deal_sort_temp_path}" "${temp_deal_sort_path}" "${temp_deal_sort_file}"
-      notify "deal sort"
+          # 2.2.1 deal做map合并 + sort
+          # [1]deal_map输入文件夹路径 [2]用于sort的临时路径 [3]每个deal_map文件sort后的文件夹路径 [4]deal_sort聚合结果文件
+          do_sort "${temp_deal_map_path}" "${deal_sort_temp_path}" "${temp_deal_sort_path}" "${temp_deal_sort_file}"
+          notify "deal sort"
 
-      # 2.2.2 deal做reduce
-      # [1]deal_sort聚合结果文件 [2]deal_reduce脚本 [3]deal_reduce结果文件
-      < "${temp_deal_sort_file}" python "${script_path}/deal_reduce.py" > "${deal_result_file}"
-      notify "deal_reduce.py"
-    ) &
+          # 2.2.2 deal做reduce
+          # [1]deal_sort聚合结果文件 [2]deal_reduce脚本 [3]deal_reduce结果文件
+          < "${temp_deal_sort_file}" python "${script_path}/deal_reduce.py" > "${deal_result_file}"
+          notify "deal_reduce.py"
+        ) &
+    else
+       warn "上报日志文件夹不存在或无请求日志文件，已跳过上报日志处理"
+    fi
 
     wait
 
@@ -82,6 +90,11 @@ notify(){
     local success_msg="$(date '+%Y-%m-%d %H:%M:%S,%3N') - INFO - 【${report_datetime}报表】 - 【$1】执行完成"
     echo "${success_msg}" >> "${log_file}"
   fi
+}
+
+warn(){
+  local warn_msg="【Nebula】【Warn】【${report_datetime}报表】$1"
+  echo "${warn_msg}" >> "${log_file}"
 }
 
 init(){
