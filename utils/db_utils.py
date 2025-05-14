@@ -95,15 +95,9 @@ class DbUtils:
                 SUM(pvs) AS pvs,
                 media_id, 
                 adspot_id
-            FROM (
-                SELECT
-                    pvs,
-                    media_id,
-                    adspot_id
-                FROM report_hourly
-                WHERE timestamp BETWEEN {begin_time} AND {end_time}
-                GROUP BY timestamp, media_id, adspot_id
-            ) t
+            FROM 
+                report_hourly
+            WHERE timestamp BETWEEN {begin_time} AND {end_time}
             GROUP BY media_id, adspot_id
         ) A
         JOIN (
