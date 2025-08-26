@@ -81,7 +81,7 @@ def insert_hourly_report(table_name, df, logger):
         elif table_name == exp_report_hourly_table_name:
             update_count = DbUtils().insert_hourly_exp_report(df)
 
-        if update_count == 0:
+        if update_count is None or update_count == 0:
             logger.warn(f'{table_name}小时报表数据库更新异常, 更新条数为0')
         elif update_count < len(df):
             logger.warn(
