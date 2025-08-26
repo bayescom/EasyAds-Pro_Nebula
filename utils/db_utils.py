@@ -47,19 +47,41 @@ class DbUtils:
         return result
 
     # 小时报表更新
-    def insert_hourly_report(self, update_list):
-        # 因为竞胜没有打点，wins用shows近似
-        for one_row_list in update_list:
-            one_row_list.append(one_row_list[8])
+    def insert_hourly_report(self, df):
+        # TODO 暂无竞胜打点，wins用shows近似，引擎更新后再统计
+        df['win'] = df['show']
+        update_list = df.values.tolist()
 
         db = self.get_mysql_conn()
         cursor = db.cursor()
         sql = f"""
         INSERT INTO report_hourly
-        (timestamp, media_id, adspot_id, channel_id, sdk_adspot_id, pvs, reqs, bids, shows, clicks, income, wins)   
+        (timestamp, media_id, adspot_id, channel_id, sdk_adspot_id, pvs, reqs, bids, wins, shows, clicks, income)   
         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-        ON DUPLICATE KEY UPDATE pvs=values(pvs), bids=values(bids), shows=values(shows), clicks=values(clicks),  
-        income=values(income),wins=values(wins)
+        ON DUPLICATE KEY UPDATE pvs=values(pvs), bids=values(bids), wins=values(wins), shows=values(shows), 
+        clicks=values(clicks), income=values(income)
+        """
+        n = cursor.executemany(sql, update_list)
+        db.commit()
+        cursor.close()
+        db.close()
+        return n
+
+    # 小时AB测试报表更新
+    def insert_hourly_exp_report(self, df):
+        # TODO 暂无竞胜打点，wins用shows近似，引擎更新后再统计
+        df['win'] = df['show']
+        update_list = df.values.tolist()
+
+        db = self.get_mysql_conn()
+        cursor = db.cursor()
+        sql = f"""
+        INSERT INTO exp_report_hourly
+        (timestamp, media_id, adspot_id, channel_id, sdk_adspot_id, exp_type, exp_id, group_id,
+         reqs, bids, wins, shows, clicks, income)   
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        ON DUPLICATE KEY UPDATE bids=values(bids), wins=values(wins), shows=values(shows), 
+        clicks=values(clicks), income=values(income)
         """
         n = cursor.executemany(sql, update_list)
         db.commit()
@@ -97,8 +119,11 @@ class DbUtils:
                 adspot_id
             FROM 
                 report_hourly
-            WHERE timestamp BETWEEN {begin_time} AND {end_time}
-            GROUP BY media_id, adspot_id
+            WHERE 
+                timestamp BETWEEN {begin_time} AND {end_time}
+            GROUP BY 
+                media_id, 
+                adspot_id
         ) A
         JOIN (
             SELECT
@@ -112,9 +137,15 @@ class DbUtils:
                 adspot_id, 
                 channel_id, 
                 sdk_adspot_id
-            FROM report_hourly
-            WHERE timestamp BETWEEN {begin_time} AND {end_time}
-            GROUP BY media_id, adspot_id, channel_id, sdk_adspot_id
+            FROM 
+                report_hourly
+            WHERE 
+                timestamp BETWEEN {begin_time} AND {end_time}
+            GROUP BY 
+                media_id, 
+                adspot_id, 
+                channel_id, 
+                sdk_adspot_id
         ) B
         ON A.media_id = B.media_id AND A.adspot_id = B.adspot_id
         ON DUPLICATE KEY UPDATE 
@@ -125,6 +156,57 @@ class DbUtils:
         shows=VALUES(shows),
         clicks=VALUES(clicks),
         income=VALUES(income)
+        """
+        n = cursor.execute(sql)
+        db.commit()
+        cursor.close()
+        db.close()
+        return n
+
+    def insert_daily_exp_report_from_hourly(self, begin_time):
+        # 天结束时间戳
+        end_time = begin_time + 86400 - 1
+
+        db = self.get_mysql_conn()
+        cursor = db.cursor()
+        sql = f"""
+        INSERT INTO exp_report_daily 
+        (timestamp, media_id, adspot_id, channel_id, sdk_adspot_id, exp_type, exp_id, group_id,
+         reqs, bids, wins, shows, clicks, income)
+        SELECT
+            {begin_time} AS timestamp,
+            media_id, 
+            adspot_id, 
+            channel_id, 
+            sdk_adspot_id,
+            exp_type, 
+            exp_id,
+            group_id, 
+            SUM(reqs) AS reqs,
+            SUM(bids) AS bids,
+            SUM(wins) AS wins,
+            SUM(shows) AS shows,
+            SUM(clicks) AS clicks,
+            SUM(income) AS income,
+        FROM
+            exp_report_hourly
+        WHERE 
+            timestamp BETWEEN {begin_time} AND {end_time}
+        GROUP BY 
+            media_id, 
+            adspot_id, 
+            channel_id, 
+            sdk_adspot_id, 
+            exp_type, 
+            exp_id, 
+            group_id
+        ON DUPLICATE KEY UPDATE 
+            reqs=VALUES(reqs),
+            bids=VALUES(bids),
+            wins=VALUES(wins),
+            shows=VALUES(shows),
+            clicks=VALUES(clicks),
+            income=VALUES(income)
         """
         n = cursor.execute(sql)
         db.commit()

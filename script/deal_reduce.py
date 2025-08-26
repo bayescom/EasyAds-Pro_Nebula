@@ -13,7 +13,7 @@ def read_input(file):
 def do_reduce():
     data = read_input(sys.stdin)
 
-    # [sdk_adspot_key]: timestamp, media_id, adspot_id, channel_id, sdk_adspot_id
+    # [sdk_adspot_key]: timestamp, media_id, adspot_id, channel_id, sdk_adspot_id, exp_type, exp_id, group_id
     # [deal_value]: action, unique_action_key, income
 
     # 示例: 键A, [(键A, 值1), (键A, 值2), (键A, 值3)...]
@@ -24,6 +24,7 @@ def do_reduce():
 
             total_req = 0
             total_bid = 0
+            total_win = 0
             total_show = 0
             total_click = 0
             total_income = 0
@@ -41,6 +42,8 @@ def do_reduce():
                         total_req += 1
                     elif action == 'succeed':
                         total_bid += 1
+                    elif action == 'bidwin':
+                        total_win += 1
                     elif action == 'win':
                         total_show += 1
                         total_income += float(deal_value[2])  # 只在曝光的时候统计收入
@@ -49,6 +52,7 @@ def do_reduce():
             value_str = SEPARATOR.join((
                 str(total_req),
                 str(total_bid),
+                str(total_win),
                 str(total_show),
                 str(total_click),
                 str(total_income / 100000)  # 分每千次展示转成元
