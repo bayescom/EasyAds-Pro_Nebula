@@ -19,4 +19,4 @@ CREATE TABLE `report_daily` (
   `report_api_income` float NOT NULL DEFAULT '0' COMMENT 'ReportAPI 获取到的广告收入',
   PRIMARY KEY (`id`) USING HASH,
   UNIQUE KEY `uniKey` (`timestamp`,`media_id`,`adspot_id`,`sdk_adspot_id`,`channel_id`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=511 DEFAULT CHARSET=utf8
+)

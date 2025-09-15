@@ -16,4 +16,4 @@ CREATE TABLE `exp_report_daily` (
   `income` float NOT NULL DEFAULT '0' COMMENT '收入',
   PRIMARY KEY (`id`) USING HASH,
   UNIQUE KEY `uniKey` (`timestamp`,`media_id`,`adspot_id`,`sdk_adspot_id`,`channel_id`,`exp_type`,`exp_id`,`group_id`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=449 DEFAULT CHARSET=utf8
+)
