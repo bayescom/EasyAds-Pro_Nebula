@@ -6,4 +6,4 @@ CREATE TABLE `sdk_report_api_params` (
   `status` tinyint(1) NOT NULL DEFAULT '1' COMMENT '状态',
   `mark_deleted` tinyint(1) NOT NULL DEFAULT '0' COMMENT '软删除',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=38 DEFAULT CHARSET=utf8
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
