@@ -24,7 +24,7 @@ EasyAds Pro 数据报表任务 & Report API三方数据拉取任务
 
 MySQL数据库配置位于 `/nebula/db.config`，请根据您的实际配置填写。
 
-本任务涉及到三个MySQL数据表：report_hourly（小时报表）、report_daily（天报表）、sdk_report_api_params（report api任务上游渠道账号表）。项目提供了建表的示例语句，位于 `/nebula/create_table_template`，您可以直接使用或者按需求修改。
+本任务涉及到以下MySQL数据表：report_hourly（小时报表）、report_daily（天报表）、exp_report_hourly（AB测试小时报表）、exp_report_daily（AB测试天报表）、sdk_report_api_params（report api任务上游渠道账号表）。项目提供了建表的示例语句，位于 `/nebula/create_table_template`，您可以直接使用或者按需求修改。
 
 * 如果您需要修改数据库更新相关代码，请修改报表更新逻辑脚本 `/nebula/script/join_and_update_db.py` 和数据库更新脚本 `/nebula/utils/db_utils.py`。
 <br><br>

@@ -13,13 +13,18 @@ from log_utils import LogUtils
 SEPARATOR = ':'
 # 和数据库的列名一致
 adspot_key = ['timestamp', 'media_id', 'adspot_id']
-sdk_adspot_key = adspot_key + ['channel_id', 'sdk_adspot_id']
+sdk_adspot_key = ['timestamp', 'media_id', 'adspot_id', 'channel_id', 'sdk_adspot_id']
+exp_key = ['timestamp', 'media_id', 'adspot_id', 'channel_id', 'sdk_adspot_id', 'exp_type', 'exp_id', 'group_id']
 
 pv_value = ['pvs']
-deal_value = ['reqs', 'bids', 'shows', 'clicks', 'income']
+deal_value = ['reqs', 'bids', 'wins', 'shows', 'clicks', 'income']
 
-# 所有列名
-all_cols = sdk_adspot_key + pv_value + deal_value
+# 输出到两个表：广告源维度的报表和ab测试分组维度的报表
+all_cols = exp_key + pv_value + deal_value
+report_cols = sdk_adspot_key + pv_value + deal_value
+exp_report_cols = exp_key + deal_value
+report_hourly_table_name = 'report_hourly'
+exp_report_hourly_table_name = 'exp_report_hourly'
 
 
 # 1. 如果是小时报表任务，需要把三个reduce结果文件按照广告源维度left join起来得到结果
@@ -31,9 +36,9 @@ def do_join(pv_file_in, deal_file_in, file_out, report_timestamp):
     except:
         pv_df = pd.DataFrame(columns=adspot_key + pv_value)
     try:
-        deal_df = pd.read_csv(deal_file_in, sep=SEPARATOR, header=None, dtype=str, names=(sdk_adspot_key + deal_value))
+        deal_df = pd.read_csv(deal_file_in, sep=SEPARATOR, header=None, dtype=str, names=(exp_key + deal_value))
     except:
-        deal_df = pd.DataFrame(columns=sdk_adspot_key + deal_value)
+        deal_df = pd.DataFrame(columns=exp_key + deal_value)
 
     join_df = pd.merge(pv_df, deal_df, on=adspot_key, how='outer')
 
@@ -44,40 +49,51 @@ def do_join(pv_file_in, deal_file_in, file_out, report_timestamp):
     fillna_dict = {
         'channel_id': '-1',
         'sdk_adspot_id': '-',
+        'exp_type': '-1',
+        'exp_id': '-1',
+        'group_id': '-1'
     }
     join_df = join_df.fillna(value=fillna_dict).fillna('0')
 
     # 把income转换成浮点型，保留3位小数四舍五入
     join_df['income'] = join_df['income'].astype(float).round(3)
-    int_columns = ['pvs', 'reqs', 'bids', 'shows', 'clicks']
+    int_columns = ['pvs', 'reqs', 'wins', 'bids', 'shows', 'clicks']
     join_df[int_columns] = join_df[int_columns].astype(int)
 
     # 写出到结果文件夹，用作备份
     join_df = join_df[all_cols]
     join_df.to_csv(file_out, sep=SEPARATOR, index=False, header=False, encoding='utf-8-sig')
-    # 转成元组数组，用来更新数据库
-    update_list = join_df.values.tolist()
 
-    return update_list
+    # 拆成广告源和ab测试报表，广告源报表要按照广告源维度聚合，ab测试报表只要type不等于-1的记录，也不要pv
+    report_df = join_df[report_cols].groupby(sdk_adspot_key).sum().reset_index()
+    exp_report_df = join_df[exp_report_cols]
+    exp_report_df = exp_report_df[exp_report_df['exp_type'] != '-1']
+
+    return report_df, exp_report_df
 
 
 # 2. 报表插入数据库，并检查插入是否成功
-def insert_hourly_report(update_list, logger):
+def insert_hourly_report(table_name, df, logger):
     update_count = 0
     try:
-        update_count = DbUtils().insert_hourly_report(update_list)
-        if update_count == 0:
-            logger.warn(f'小时报表数据库更新异常, 更新条数为0')
-        elif update_count < len(update_list):
+        if table_name == report_hourly_table_name:
+            update_count = DbUtils().insert_hourly_report(df)
+        elif table_name == exp_report_hourly_table_name:
+            update_count = DbUtils().insert_hourly_exp_report(df)
+
+        if update_count is None or update_count == 0:
+            logger.warn(f'{table_name}小时报表数据库更新异常, 更新条数为0')
+        elif update_count < len(df):
             logger.warn(
-                f'小时报表数据库更新异常, 没有全部写入, 更新数据{len(update_list)}条, 写入数据库{update_count}条')
+                f'{table_name}小时报表数据库更新异常, 没有全部写入, 更新数据{len(df)}条, 写入数据库{update_count}条')
     except Exception as e:
-        logger.error(f'小时报表数据库操作异常: {e}')
-    logger.info(f'小时报表报表数据库更新已完成, 共{update_count}条记录')
+        logger.error(f'{table_name}小时报表数据库操作异常: {e}')
+    logger.info(f'{table_name}小时报表数据库更新已完成, 共{update_count}条记录')
 
 
 def init():
     if len(sys.argv) != 7 and len(sys.argv) != 4:
+        print('请检查传入join_and_update_db.py的参数个数')
         sys.exit(1)
 
     time_type = sys.argv[1]
@@ -95,9 +111,10 @@ def init():
 
         report_timestamp = str(int(time.mktime(time.strptime(report_datetime, time_format))))
         # 1. 小时报表任务，把reduce结果文件按照广告源维度left join起来得到结果
-        update_list = do_join(pv_file_in, deal_file_in, file_out, report_timestamp)
+        report_df, exp_report_df = do_join(pv_file_in, deal_file_in, file_out, report_timestamp)
         # 2. 插入数据库并检查是否成功
-        insert_hourly_report(update_list, logger)
+        insert_hourly_report(report_hourly_table_name, report_df, logger)
+        insert_hourly_report(exp_report_hourly_table_name, exp_report_df, logger)
 
     elif time_type == 'day':
         time_format = '%Y%m%d'
@@ -110,6 +127,9 @@ def init():
         n = DbUtils().insert_daily_report_from_hourly(report_timestamp)
         if n == 0:
             logger.warn(f'天报表数据库更新异常, 更新条数为0')
+        n = DbUtils().insert_daily_exp_report_from_hourly(report_timestamp)
+        if n == 0:
+            logger.warn(f'AB测试天报表数据库更新异常, 更新条数为0')
     else:
         sys.exit(1)
 
