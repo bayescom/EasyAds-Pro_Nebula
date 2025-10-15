@@ -79,32 +79,47 @@ def get_meta_report_map(sdk_setting_list):
 
 def get_update_list(meta_report_map, record_id_map):
     update_list = []
-    # (渠道id, 变现方id, 渠道广告位id)
     for key in record_id_map.keys():
-        # (请求数, 返回数, 展现数, 点击数, 收入)
+        # (请求数, 返回数, 展现数, 点击数, 唤起数, 收入)
         report_data = meta_report_map.get(key)
         if report_data is None:
             continue
-        # [(记录id1, 请求数1, 展现数1), (记录id2, 请求数2, 展现数2)...]
+        # [(记录id1, 请求数1, 返回数1, 展现数1, 点击数1, 唤起数1, 收入1), (记录id2, 请求数2, 返回数2, 展现数2, 点击数2, 唤起数2, 收入2)...]
         record_id_list = record_id_map[key]
-        # 如果渠道广告位对应多个倍业广告位，请求数按照请求数比例划分，其他数据按照展现数的比例划分
-        one_update = []
+        # 如果渠道广告位对应多个倍业广告位，各个指标要分别按比例划分
         if len(record_id_list) == 1:
-            one_update.append(report_data + (record_id_list[0][0],))
+            update_list.append(report_data + (record_id_list[0][0],))
         elif len(record_id_list) > 1:
-            total_pv = sum([record_id[1] for record_id in record_id_list])
-            total_imp = sum([record_id[2] for record_id in record_id_list])
-            if total_pv > 0 and total_imp > 0:
-                for record_id in record_id_list:
-                    id = record_id[0]
-                    pv_percent = record_id[1] * 1.0 / total_pv
-                    show_percent = record_id[2] * 1.0 / total_imp
-                    values = [round(report_data[0] * pv_percent)] + [round(x * show_percent) for x in
-                                                                     report_data[1:-1]] + \
-                             [round(report_data[-1] * show_percent, 2)]
-                    one_update.append(tuple(values) + (id,))
+            total_req = 0
+            total_bid = 0
+            total_show = 0
+            total_click = 0
+            total_income = 0
+            for record_id in record_id_list:
+                total_req += record_id[1]
+                total_bid += record_id[2]
+                total_show += record_id[3]
+                total_click += record_id[4]
+                total_income += record_id[5]
+            total_req = 1 if total_req == 0 else total_req
+            total_bid = 1 if total_bid == 0 else total_bid
+            total_show = 1 if total_show == 0 else total_show
+            total_click = 1 if total_click == 0 else total_click
+            total_income = 1 if total_income == 0 else total_income
+            for record_id in record_id_list:
+                id = record_id[0]
+                req_percent = record_id[1] * 1.0 / total_req
+                bid_percent = record_id[2] * 1.0 / total_bid
+                show_percent = record_id[3] * 1.0 / total_show
+                click_percent = record_id[4] * 1.0 / total_click
+                income_percent = record_id[5] * 1.0 / total_income
 
-        update_list.extend(one_update)
+                values = [round(report_data[0] * req_percent),
+                          round(report_data[1] * bid_percent),
+                          round(report_data[2] * show_percent),
+                          round(report_data[3] * click_percent),
+                          round(report_data[4] * income_percent, 2)]
+                update_list.append(tuple(values) + (id,))
 
     return update_list
 
@@ -122,7 +137,7 @@ def do_update_report_api(sdk_setting_list):
     if not meta_report_map:
         return retry_sdk_setting_list
 
-    # 有可能同一个广告源配在了多个倍业广告位上，对应多条记录
+    # 有可能同一个广告源配在了多个自己的广告位上，对应多条记录
     # (渠道id, 渠道广告位id) -> 记录id
     sdk_adspot_id_list = [x[1] for x in meta_report_map.keys()]
     if len(sdk_adspot_id_list) == 0:
