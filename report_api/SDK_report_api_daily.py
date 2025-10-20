@@ -5,6 +5,7 @@ import sys
 import time
 from datetime import timedelta, datetime
 
+import bayes_report_api
 import csj_report_api
 import ks_report_api
 import ylh_report_api
@@ -24,6 +25,7 @@ MAX_RETRY_TIMES = 5
 RETRY_INTERVAL = 60 * 20
 
 sdk_name_map = {
+    1: '倍业',
     2: '优量汇',
     3: '穿山甲',
     4: '百度',
@@ -36,6 +38,8 @@ def get_one_report(sdk_setting):
     params = sdk_setting['params']
     # 这里必须声明为lambda函数，这样才不会在生成字典的时候直接调用
     report_dict = {
+        # 1 倍业
+        1: lambda: bayes_report_api.bayes_report(yesterday, params['secret_key']),
         # 2 优量汇
         2: lambda: ylh_report_api.ylh_report(yesterday, params['member_id'], params['secret']),
         # 3 穿山甲
