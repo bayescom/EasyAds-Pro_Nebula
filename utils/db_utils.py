@@ -232,7 +232,7 @@ class DbUtils:
         db = self.get_mysql_conn()
         sdk_adspot_id_str = ','.join([f"'{x}'" for x in sdk_adspot_id_list])
         sql = f"""SELECT channel_id, sdk_adspot_id, id,
-                         pvs, shows
+                         reqs, bids, shows, clicks, income 
                   FROM report_daily
                   WHERE timestamp = {timestamp} AND sdk_adspot_id IN ({sdk_adspot_id_str})"""
         record_id_map = {}
@@ -241,33 +241,15 @@ class DbUtils:
             channel_id = str(x[0])
             sdk_adspot_id = str(x[1])
             id = str(x[2])
-            pv = int(x[3])
-            show = int(x[4])
+            req = int(x[3])
+            bid = int(x[4])
+            show = int(x[5])
+            click = int(x[6])
+            income = float(x[7])
             if (channel_id, sdk_adspot_id) not in record_id_map:
                 record_id_map[(channel_id, sdk_adspot_id)] = []
-            record_id_map[(channel_id, sdk_adspot_id)].append((id, pv, show))
+            record_id_map[(channel_id, sdk_adspot_id)].append((id, req, bid, show, click, income))
         return record_id_map
-
-    # 查询小时报表广告源到id的映射
-    def get_hourly_record_id_map(self, timestamp, sdk_adspot_id_list):
-        db = self.get_mysql_conn()
-        sdk_adspot_id_str = ','.join([f"'{x}'" for x in sdk_adspot_id_list])
-        sql = f"""SELECT channel_id, sdk_adspot_id, id, shows AS shows 
-                  FROM report_hourly
-                  WHERE timestamp >= {timestamp}
-                  AND  timestamp < {timestamp + 86400}
-                  AND sdk_adspot_id IN {sdk_adspot_id_str}"""
-        result = self.__select_template(db, sql)
-        hourly_record_id_map = {}
-        for x in result:
-            channel_id = str(x[0])
-            sdk_adspot_id = str(x[1])
-            id = str(x[2])
-            show = int(x[3])
-            if (channel_id, sdk_adspot_id) not in hourly_record_id_map:
-                hourly_record_id_map[(channel_id, sdk_adspot_id)] = []
-            hourly_record_id_map[(channel_id, sdk_adspot_id)].append((id, show))
-        return hourly_record_id_map
 
     # 根据报表记录id更新report api拉取的三方数据
     def update_report_api(self, update_list):

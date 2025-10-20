@@ -172,9 +172,9 @@ init(){
            "${result_path}"
 
   # TODO 需要将action=req的日志放入pv文件夹，其他action的日志放入deal文件夹
-  local_log_path="/home/work/tmp/hour/log"
-  temp_nebula_pv_log_path=${local_log_path}/${report_datetime}/final_log_files/pv
-  temp_nebula_deal_log_path=${local_log_path}/${report_datetime}/final_log_files/deal
+  # TODO 这两个文件夹路径可自定义，建议在路径中保留运行日期
+  temp_nebula_pv_log_path="/home/work/tmp/hour/log/${report_datetime}/final_log_files/pv"
+  temp_nebula_deal_log_path="/home/work/tmp/hour/log/${report_datetime}/final_log_files/deal"
   hdfs_hosts="file"
 }
 
