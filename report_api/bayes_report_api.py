@@ -51,12 +51,3 @@ def bayes_report(yesterday, report_api_key):
         return table_data, True
     else:
         return None, False
-
-
-
-# 测试
-# aklrsvqz2hf54jrr1nmzymcr3w7iu3ev
-if __name__ == '__main__':
-    import pandas as pd
-    pd.set_option('display.max_columns', None)
-    print(bayes_report('2025-10-19', 'aklrsvqz2hf54jrr1nmzymcr3w7iu3ev'))
