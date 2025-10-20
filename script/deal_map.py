@@ -33,6 +33,20 @@ def do_map(hdfs_hosts, file_in, deal_file_out, logger):
             channel_id = json_obj['supplierid']
             sdk_adspot_id = json_obj['sdk_adspotid']
 
+            # AB测试相关字段
+            if 'group_exp_id' in json_obj:
+                exp_type = '1'
+                exp_id = str(json_obj.get('group_exp_id', '-1'))
+                group_id = str(json_obj.get('group_id', '-1'))
+            elif 'strategy_percentage_exp_id' in json_obj:
+                exp_type = '2'
+                exp_id = str(json_obj.get('strategy_percentage_exp_id', '-1'))
+                group_id = str(json_obj.get('strategy_percentage_id', '-1'))
+            else:
+                exp_type = '-1'
+                exp_id = '-1'
+                group_id = '-1'
+
             # 竞价位置是bidResult，固价是sdk_price
             if 'bidResult' in json_obj:
                 income = json_obj['bidResult']
@@ -47,7 +61,7 @@ def do_map(hdfs_hosts, file_in, deal_file_out, logger):
             unique_action_key = m.hexdigest()
 
             sdk_adspot_key = SEPARATOR.join((
-                timestamp, media_id, adspot_id, channel_id, sdk_adspot_id
+                timestamp, media_id, adspot_id, channel_id, sdk_adspot_id, exp_type, exp_id, group_id
             ))
             deal_value = SEPARATOR.join((
                 action, unique_action_key, income
