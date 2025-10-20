@@ -84,11 +84,11 @@ def get_meta_report_map(sdk_setting_list):
 def get_update_list(meta_report_map, record_id_map):
     update_list = []
     for key in record_id_map.keys():
-        # (请求数, 返回数, 展现数, 点击数, 唤起数, 收入)
+        # (请求数, 返回数, 展现数, 点击数, 收入)
         report_data = meta_report_map.get(key)
         if report_data is None:
             continue
-        # [(记录id1, 请求数1, 返回数1, 展现数1, 点击数1, 唤起数1, 收入1), (记录id2, 请求数2, 返回数2, 展现数2, 点击数2, 唤起数2, 收入2)...]
+        # [(记录id1, 请求数1, 返回数1, 展现数1, 点击数1, 收入1), (记录id2, 请求数2, 返回数2, 展现数2, 点击数2, 收入2)...]
         record_id_list = record_id_map[key]
         # 如果渠道广告位对应多个倍业广告位，各个指标要分别按比例划分
         if len(record_id_list) == 1:
