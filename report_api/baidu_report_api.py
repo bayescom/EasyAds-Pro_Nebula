@@ -16,8 +16,8 @@ import report_api_utils
 host = 'https://ubapi.baidu.com'
 uri = '/ssp/1/sspservice/app/app-report/get-app-report'
 
-columns = ['adPositionId"', 'request', 'view', 'click', 'income']
-missing_column_indexes = [2, 5]
+columns = ['adPositionId', 'request', 'view', 'click', 'income']
+missing_column_indexes = [2]
 
 def baidu_report(yesterday, access_key, private_key):
     yesterday = yesterday.replace('-', '')
