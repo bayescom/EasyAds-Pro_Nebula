@@ -11,8 +11,8 @@ import report_api_utils
 #          ['share', '分成'], ['ecpm', '千次展现收益']]
 # ADSTYLE_MAP = {1: "信息流", 2: "激励视频", 3:"全屏", 4: "开屏", 5: "Banner", 6: "Draw信息流", 13 :"插屏"}
 
-columns = ['position_id', 'impression', 'click', 'share']
-missing_column_indexes = [1, 2]
+columns = ['position_id', 'req_cnt', 'resp_cnt', 'impression', 'click', 'share']
+missing_column_indexes = []
 
 
 class KSMediaUtil:
