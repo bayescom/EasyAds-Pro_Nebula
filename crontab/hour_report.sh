@@ -176,6 +176,11 @@ init(){
   temp_nebula_pv_log_path="/home/work/tmp/hour/log/${report_datetime}/final_log_files/pv"
   temp_nebula_deal_log_path="/home/work/tmp/hour/log/${report_datetime}/final_log_files/deal"
   hdfs_hosts="file"
+
+  # TODO 示例：
+  stella_log_path="你的stella日志路径"
+  cp ${stella_log_path}/req."${report_datetime}".log "${temp_nebula_pv_log_path}"
+  cp ${stella_log_path}/*."${report_datetime}".log "${temp_nebula_deal_log_path}"
 }
 
 main "$@"; exit
