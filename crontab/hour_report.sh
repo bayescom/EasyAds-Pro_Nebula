@@ -60,7 +60,8 @@ main() {
 
     # 运行结束后删除临时中间文件
     rm -r "${temp_path}"
-    rm -r "${local_log_path:?}/${report_datetime}"
+    rm -r "${temp_nebula_pv_log_path:?}"
+    rm -r "${temp_nebula_deal_log_path:?}"
 }
 
 do_sort(){
@@ -178,9 +179,12 @@ init(){
   hdfs_hosts="file"
 
   # TODO 示例：
+  mkdir -p "${temp_nebula_pv_log_path}" \
+           "${temp_nebula_deal_log_path}"
   stella_log_path="你的stella日志路径"
-  cp ${stella_log_path}/req."${report_datetime}".log "${temp_nebula_pv_log_path}"
-  cp ${stella_log_path}/*."${report_datetime}".log "${temp_nebula_deal_log_path}"
+  stella_report_time=$(echo "$report_datetime" | sed -E 's/^([0-9]{4})([0-9]{2})([0-9]{2})(_.*)$/\1-\2-\3\4/')
+  cp ${stella_log_path}/req."${stella_report_time}".log "${temp_nebula_pv_log_path}"
+  cp ${stella_log_path}/*."${stella_report_time}".log "${temp_nebula_deal_log_path}"
 }
 
 main "$@"; exit
