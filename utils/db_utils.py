@@ -48,8 +48,6 @@ class DbUtils:
 
     # 小时报表更新
     def insert_hourly_report(self, df):
-        # TODO 暂无竞胜打点，wins用shows近似，引擎更新后再统计
-        df['wins'] = df['shows']
         update_list = df.values.tolist()
 
         db = self.get_mysql_conn()
@@ -58,7 +56,7 @@ class DbUtils:
         INSERT INTO report_hourly
         (timestamp, media_id, adspot_id, channel_id, sdk_adspot_id, pvs, reqs, bids, wins, shows, clicks, income)   
         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-        ON DUPLICATE KEY UPDATE pvs=values(pvs), bids=values(bids), wins=values(wins), shows=values(shows), 
+        ON DUPLICATE KEY UPDATE pvs=values(pvs), reqs=values(reqs), bids=values(bids), wins=values(wins), shows=values(shows), 
         clicks=values(clicks), income=values(income)
         """
         n = cursor.executemany(sql, update_list)
@@ -69,8 +67,6 @@ class DbUtils:
 
     # 小时AB测试报表更新
     def insert_hourly_exp_report(self, df):
-        # TODO 暂无竞胜打点，wins用shows近似，引擎更新后再统计
-        df['wins'] = df['shows']
         update_list = df.values.tolist()
 
         db = self.get_mysql_conn()

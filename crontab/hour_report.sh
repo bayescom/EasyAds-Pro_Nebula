@@ -160,7 +160,7 @@ init(){
   # 检查和创建临时文件夹、输出文件夹，递归创建
   # 第一次运行后有的临时文件夹
   mkdir -p "${log_path}"
-  
+
   # 每次运行都要创建的临时文件夹
   mkdir -p "${temp_path}" \
            "${temp_pv_map_path}" \
