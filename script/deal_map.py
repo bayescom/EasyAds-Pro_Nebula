@@ -25,7 +25,7 @@ def do_map(hdfs_hosts, file_in, deal_file_out, logger):
             json_obj = json.loads(line.decode('utf-8'))
             action = json_obj['action']
             reqid = json_obj['reqid']
-            priority = json_obj['priority']
+            priority = json_obj.get('priority', '-1')
             date_str = json_obj['ftime']
             timestamp = str(int(time.mktime(time.strptime(date_str[0: 13], "%Y-%m-%d %H"))))
             media_id = json_obj['appid']
