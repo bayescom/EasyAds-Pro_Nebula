@@ -171,10 +171,11 @@ init(){
            "${deal_sort_temp_path}" \
            "${result_path}"
 
-  # TODO 需要将action=req的日志放入pv文件夹，其他action的日志放入deal文件夹
-  # TODO 这两个文件夹路径可自定义，建议在路径中保留运行日期
+  # TODO 需要将action=req的请求日志放入temp_nebula_pv_log_path文件夹，其他action的上报日志放入temp_nebula_deal_log_path文件夹
+  # TODO 这两个文件夹路径可自定义，建议在路径中保留运行日期，防止多个小时任务并行覆盖数据
   temp_nebula_pv_log_path="/home/work/tmp/hour/log/${report_datetime}/final_log_files/pv"
   temp_nebula_deal_log_path="/home/work/tmp/hour/log/${report_datetime}/final_log_files/deal"
+
   hdfs_hosts="file"
 }
 

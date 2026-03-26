@@ -11,7 +11,7 @@ EasyAds Pro 数据报表任务 & Report API三方数据拉取任务
 <br><br>
 ### 您需要：
 ### 1. 给任务提供聚合SDK日志输入
-见小时运行脚本 `/nebula/crontab/hour_report.sh`第161行，**在小时脚本运行时，您需要确保两种聚合SDK日志文件分别存在于两个指定的路径。**
+见小时运行脚本 `/nebula/crontab/hour_report.sh`第174-177行，**在小时脚本运行时，您需要确保两种聚合SDK日志文件分别存在于两个指定的路径。**
 
 将整个小时的请求日志文件（action为req）放入`temp_nebula_pv_log_path`，其他上报日志文件（action为loaded、succeed、win、click）放入`temp_nebula_deal_log_path`。 推荐您编写一个自动拉取并分割日志的脚本，并在小时运行脚本`hour_report.sh`第161行处调用。
 
@@ -20,11 +20,11 @@ EasyAds Pro 数据报表任务 & Report API三方数据拉取任务
 * 请确保聚合SDK日志文件的临时路径包含对应的时间，例如：`/您的目录/20250101_00/pv`和`/您的目录/20250101_00/deal`，以确保多个小时的任务同时运行时临时文件不会混淆。
 <br><br>
 ### 2. 给任务提供MySQL数据库输出
-见数据库更新python脚本 `/nebula/utils/db_utils.py`第50行，**脚本运行完成后，您的结果将写出到给定的MySQL数据库中。**
-
 MySQL数据库配置位于 `/nebula/db.config`，请根据您的实际配置填写。
 
 本任务涉及到以下MySQL数据表：report_hourly（小时报表）、report_daily（天报表）、exp_report_hourly（AB测试小时报表）、exp_report_daily（AB测试天报表）、sdk_report_api_params（report api任务上游渠道账号表）。项目提供了建表的示例语句，位于 `/nebula/create_table_template`，您可以直接使用或者按需求修改。
+
+**请确保您已经正确配置了MySQL数据库并创建了对应的MySQL数据表。脚本正确运行完成后，您的结果将写出到给定的MySQL数据库中。**
 
 * 如果您需要修改数据库更新相关代码，请修改报表更新逻辑脚本 `/nebula/script/join_and_update_db.py` 和数据库更新脚本 `/nebula/utils/db_utils.py`。
 <br><br>
