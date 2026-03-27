@@ -11,7 +11,7 @@ EasyAds Pro 数据报表任务 & Report API三方数据拉取任务
 <br><br>
 ### 您需要：
 ### 1. 给任务提供聚合SDK日志输入
-见小时运行脚本 `/nebula/crontab/hour_report.sh`第217行，**您需要自行配置您的Stella项目产出的日志文件夹所在路径，以给Nebula项目提供聚合SDK日志输入。**
+见小时运行脚本 `/nebula/crontab/hour_report.sh`开头，**您需要自行配置您的Stella项目产出的日志文件夹所在路径，以给Nebula项目提供聚合SDK日志输入。**
 
 <br><br>
 ### 2. 给任务提供MySQL数据库输出

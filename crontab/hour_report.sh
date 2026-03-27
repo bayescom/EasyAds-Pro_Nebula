@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# TODO 这里需要配置你的Stella项目输出的日志路径
+stella_log_path="/home/work/stella/slog"
+
 main() {
     # 准备运行参数
     init "$@"
@@ -212,9 +215,6 @@ init(){
            "${result_path}" \
            "${temp_nebula_pv_log_path}" \
            "${temp_nebula_deal_log_path}" \
-
-  # TODO 这里需要配置你的Stella项目输出的日志路径
-  stella_log_path="/home/work/stella/slog"
 
   stella_report_datetime=$(echo "$report_datetime" | sed 's/\(....\)\(..\)\(..\)_\(.*\)/\1-\2-\3_\4/')
   stella_pv_log_file="${stella_log_path}/req.${stella_report_datetime}.log"
