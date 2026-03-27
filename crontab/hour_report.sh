@@ -60,7 +60,6 @@ main() {
 
     # 运行结束后删除临时中间文件
     rm -r "${temp_path}"
-    rm -r "${local_log_path:?}/${report_datetime}"
 }
 
 do_sort(){
@@ -95,6 +94,45 @@ notify(){
 warn(){
   local warn_msg="【Nebula】【Warn】【${report_datetime}报表】$1"
   echo "${warn_msg}" >> "${log_file}"
+}
+
+split_logs() {
+    # 1. 参数赋值
+    local stella_pv_log_file="$1"
+    local stella_deal_log_file="$2"
+    local temp_nebula_pv_log_path="$3"
+    local temp_nebula_deal_log_path="$4"
+
+    # 2. 参数校验
+    if [ ! -f "$stella_pv_log_file" ] || [ ! -f "$stella_deal_log_file" ]; then
+        echo "错误: 请检查给定的Stella日志文件是否存在"
+        echo "当前给定请求日志路径: ${stella_pv_log_file}"
+        echo "当前给定上报日志路径: ${stella_deal_log_file}"
+        return 1
+    fi
+
+    process_single_file() {
+        local input_file="$1"
+        local output_dir="$2"
+        local type_name="$3"
+
+        echo "开始处理 $type_name 文件: $input_file"
+
+        # 执行分割命令
+        prefix=$(basename "${input_file%.*}")
+        <"${input_file}" parallel --pipe -N 100000 'cat > "'"${output_dir}/${prefix}"'.data.$(uuidgen).log"'
+
+        echo "$type_name 分割任务已提交后台。"
+    }
+
+    # 4. 执行处理
+    process_single_file "$stella_pv_log_file" "$temp_nebula_pv_log_path" "请求日志"
+    process_single_file "$stella_deal_log_file" "$temp_nebula_deal_log_path" "上报日志"
+
+    # 5. 等待所有后台任务完成
+    echo "等待所有日志分割任务完成..."
+    wait
+    echo "所有日志分割任务处理完成"
 }
 
 init(){
@@ -141,6 +179,8 @@ init(){
   temp_pv_sort_path=${temp_path}/pv_sort
   temp_deal_map_path=${temp_path}/deal_map
   temp_deal_sort_path=${temp_path}/deal_sort
+  temp_nebula_pv_log_path=${temp_path}/log/pv
+  temp_nebula_deal_log_path=${temp_path}/log/deal
 
   # sort排序用的临时文件夹
   sort_temp_path=${temp_path}/sort
@@ -169,12 +209,22 @@ init(){
            "${temp_deal_sort_path}" \
            "${pv_sort_temp_path}" \
            "${deal_sort_temp_path}" \
-           "${result_path}"
+           "${result_path}" \
+           "${temp_nebula_pv_log_path}" \
+           "${temp_nebula_deal_log_path}" \
 
-  # TODO 需要将action=req的请求日志放入temp_nebula_pv_log_path文件夹，其他action的上报日志放入temp_nebula_deal_log_path文件夹
-  # TODO 这两个文件夹路径可自定义，建议在路径中保留运行日期，防止多个小时任务并行覆盖数据
-  temp_nebula_pv_log_path="/home/work/tmp/hour/log/${report_datetime}/final_log_files/pv"
-  temp_nebula_deal_log_path="/home/work/tmp/hour/log/${report_datetime}/final_log_files/deal"
+  # TODO 这里需要配置你的Stella项目输出的日志路径
+  stella_log_path="/home/work/stella/slog"
+
+  stella_report_datetime=$(echo "$report_datetime" | sed 's/\(....\)\(..\)\(..\)_\(.*\)/\1-\2-\3_\4/')
+  stella_pv_log_file="${stella_log_path}/req.${stella_report_datetime}.log"
+  stella_deal_log_file="${stella_log_path}/track.${stella_report_datetime}.log"
+
+  split_logs \
+  "${stella_pv_log_file}" \
+  "${stella_deal_log_file}" \
+  "${temp_nebula_pv_log_path}" \
+  "${temp_nebula_deal_log_path}"
 
   hdfs_hosts="file"
 }
